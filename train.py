@@ -1,10 +1,12 @@
 import pyarrow.ipc as ipc
 from keras import Sequential
+from keras.src.callbacks import EarlyStopping
 from keras.src.legacy.preprocessing.text import Tokenizer
-from keras.src.regularizers import regularizers
-from keras.src.utils import pad_sequences, to_categorical
+from keras.src.utils import pad_sequences
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.layers import Embedding, LSTM, Dense
+import tensorflow as tf
 import pickle
 
 # Load the data
@@ -22,11 +24,16 @@ y_train = train_data['label']
 x_val = validation_data['text']
 y_val = validation_data['label']
 
-# Tokenize the sentences
+# Tokenize the sentences using Keras Tokenizer
 tokenizer = Tokenizer()
 tokenizer.fit_on_texts(x_train)
-x_train = pad_sequences(tokenizer.texts_to_sequences(x_train))
-x_val = pad_sequences(tokenizer.texts_to_sequences(x_val), maxlen=x_train.shape[1])
+x_train = tokenizer.texts_to_sequences(x_train)
+x_val = tokenizer.texts_to_sequences(x_val)
+
+# Pad the sequences
+max_len = max(len(seq) for seq in x_train)
+x_train = pad_sequences(x_train, maxlen=max_len, padding='post')
+x_val = pad_sequences(x_val, maxlen=max_len, padding='post')
 
 # Save the tokenizer
 with open('tokenizer.pickle', 'wb') as handle:
@@ -34,8 +41,8 @@ with open('tokenizer.pickle', 'wb') as handle:
 
 # Encode the intents
 le = LabelEncoder()
-y_train = to_categorical(le.fit_transform(y_train))
-y_val = to_categorical(le.transform(y_val))
+y_train = tf.keras.utils.to_categorical(le.fit_transform(y_train))
+y_val = tf.keras.utils.to_categorical(le.transform(y_val))
 
 # Save the LabelEncoder
 with open('label_encoder.pickle', 'wb') as handle:
@@ -43,15 +50,28 @@ with open('label_encoder.pickle', 'wb') as handle:
 
 # Define the model
 model = Sequential()
-model.add(Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=64))
-model.add(LSTM(64, kernel_regularizer=regularizers.L2(0.01)))
+model.add(Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128, input_length=max_len))
+model.add(LSTM(128, return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(128))
+model.add(Dropout(0.2))
 model.add(Dense(y_train.shape[1], activation='softmax'))
 
 # Compile the model
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+optimizer = Adam(learning_rate=3e-5)
+model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Define early stopping
+early_stopping = EarlyStopping(monitor='val_loss', patience=3)
 
 # Train the model
-model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=15)
+model.fit(
+    x_train, y_train,
+    validation_data=(x_val, y_val),
+    epochs=10,
+    batch_size=32,
+    callbacks=[early_stopping]
+)
 
 # Save the model
-model.save('intent_recognition_model.keras')
+model.save('intent_recognition_model')
