@@ -1,3 +1,4 @@
 /datasets
 /.idea
 *.keras
+*.pickle
