@@ -42,8 +42,8 @@ with open('label_encoder.pickle', 'rb') as handle:
 y_train = to_categorical(le.transform(y_train))
 y_val = to_categorical(le.transform(y_val))
 
-# Define if we want to continue training a pretrained model or start a new one
-continue_training = False
+# Continue training a pretrained model or start a new one
+continue_training = True
 
 if continue_training:
     # Load the pretrained model
@@ -69,7 +69,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=3)
 model.fit(
     x_train, y_train,
     validation_data=(x_val, y_val),
-    epochs=10,
+    epochs=20,
     batch_size=32,
     callbacks=[early_stopping]
 )
