@@ -1,13 +1,12 @@
+import pickle
+
 import pyarrow.ipc as ipc
 from keras import Sequential
 from keras.src.callbacks import EarlyStopping
-from keras.src.legacy.preprocessing.text import Tokenizer
-from keras.src.utils import pad_sequences
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
-from sklearn.preprocessing import LabelEncoder
-import tensorflow as tf
-import pickle
+from keras.src.layers import Dense, Embedding, LSTM, Dropout
+from keras.src.optimizers import Adam
+from keras.src.saving import load_model
+from keras.src.utils import pad_sequences, to_categorical
 
 # Load the data
 with open('./datasets/train/data-00000-of-00001.arrow', 'rb') as f:
@@ -25,8 +24,9 @@ x_val = validation_data['text']
 y_val = validation_data['label']
 
 # Tokenize the sentences using Keras Tokenizer
-tokenizer = Tokenizer()
-tokenizer.fit_on_texts(x_train)
+with open('tokenizer.pickle', 'rb') as handle:
+    tokenizer = pickle.load(handle)
+
 x_train = tokenizer.texts_to_sequences(x_train)
 x_val = tokenizer.texts_to_sequences(x_val)
 
@@ -35,27 +35,28 @@ max_len = max(len(seq) for seq in x_train)
 x_train = pad_sequences(x_train, maxlen=max_len, padding='post')
 x_val = pad_sequences(x_val, maxlen=max_len, padding='post')
 
-# Save the tokenizer
-with open('tokenizer.pickle', 'wb') as handle:
-    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
 # Encode the intents
-le = LabelEncoder()
-y_train = tf.keras.utils.to_categorical(le.fit_transform(y_train))
-y_val = tf.keras.utils.to_categorical(le.transform(y_val))
+with open('label_encoder.pickle', 'rb') as handle:
+    le = pickle.load(handle)
 
-# Save the LabelEncoder
-with open('label_encoder.pickle', 'wb') as handle:
-    pickle.dump(le, handle, protocol=pickle.HIGHEST_PROTOCOL)
+y_train = to_categorical(le.transform(y_train))
+y_val = to_categorical(le.transform(y_val))
 
-# Define the model
-model = Sequential()
-model.add(Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128, input_length=max_len))
-model.add(LSTM(128, return_sequences=True))
-model.add(Dropout(0.2))
-model.add(LSTM(128))
-model.add(Dropout(0.2))
-model.add(Dense(y_train.shape[1], activation='softmax'))
+# Define if we want to continue training a pretrained model or start a new one
+continue_training = False
+
+if continue_training:
+    # Load the pretrained model
+    model = load_model('intent_recognition_model.keras')
+else:
+    # Define a new model
+    model = Sequential()
+    model.add(Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128, input_length=max_len))
+    model.add(LSTM(128, return_sequences=True))
+    model.add(Dropout(0.2))
+    model.add(LSTM(128))
+    model.add(Dropout(0.2))
+    model.add(Dense(y_train.shape[1], activation='softmax'))
 
 # Compile the model
 optimizer = Adam(learning_rate=3e-5)
@@ -73,5 +74,5 @@ model.fit(
     callbacks=[early_stopping]
 )
 
-# Save the model
-model.save('intent_recognition_model')
+# Save the model after training
+model.save('intent_recognition_model.keras')
