@@ -2,11 +2,13 @@ import os
 import pickle
 import pandas as pd
 import tensorflow as tf
+from keras.src.layers import Bidirectional
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout, BatchNormalization
 import numpy as np
+from tensorflow.keras.regularizers import l2
 
 # Flag to reuse saved model
 reuse_saved_model = True
@@ -17,7 +19,7 @@ tokenizer_path = '../models/nwp/tokenizer.pickle'
 max_sequence_len_path = '../models/nwp/max_sequence_len.pickle'
 
 # Learning rate parameter
-learning_rate = 0.001
+learning_rate = 0.0005
 
 # Load the corpus from CSV file
 corpus_df = pd.read_csv('../datasets/nwp/corpus.csv')
@@ -47,7 +49,7 @@ if reuse_saved_model and os.path.exists(model_path) and os.path.exists(tokenizer
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 else:
     # Tokenize the text
-    tokenizer = Tokenizer(filters='')
+    tokenizer = Tokenizer(filters='', lower=False)
     tokenizer.fit_on_texts(corpus)
 
 # Whether new or old tokenizer, we still need to calculate X and y for training
@@ -77,16 +79,25 @@ y = tf.keras.utils.to_categorical(y, num_classes=total_words)
 if model is None:
     model = Sequential()
     model.add(Embedding(total_words, 100))
-    model.add(Dropout(0.2))
-    model.add(LSTM(150))
-    model.add(Dropout(0.2))
-    model.add(Dense(total_words, activation='softmax'))
+    model.add(Dropout(0.3))
+
+    # Adding Bidirectional LSTM
+    model.add(Bidirectional(LSTM(100, return_sequences=True, kernel_regularizer=l2(0.01))))
+    model.add(Dropout(0.3))
+
+    model.add(Bidirectional(LSTM(100, kernel_regularizer=l2(0.01))))
+    model.add(BatchNormalization())
+
+    model.add(Dense(150, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dropout(0.3))  # Additional Dropout layer
+
+    model.add(Dense(total_words, activation='softmax', kernel_regularizer=l2(0.01)))
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
 # Train the model
-model.fit(X, y, epochs=50, verbose=1)
+model.fit(X, y, epochs=200, verbose=1)
 
 # Save tokenizer word index
 with open('../log/tokenizer_word_index.txt', 'w') as file:

@@ -26,10 +26,9 @@ def predict_next_word(model, tokenizer, text, max_sequence_len):
 
 # Function to predict a sentence up to 10 words or until a period is predicted or probability falls below threshold
 def predict_sentence(model, tokenizer, text, max_sequence_len, probability_threshold=0.1):
-    while len(text.split()) < 10:
+    while len(text.split()) < 30:
         next_word, probability, text = predict_next_word(model, tokenizer, text, max_sequence_len)
-        if next_word == '.' or probability < probability_threshold:
-            text += next_word if next_word == '.' else ''
+        if probability < probability_threshold:
             break
     return text
 
