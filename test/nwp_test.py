@@ -20,15 +20,16 @@ def predict_next_word(model, tokenizer, text, max_sequence_len):
     predicted = model.predict(token_list, verbose=0)
     predicted_word_index = np.argmax(predicted, axis=-1)[0]
     predicted_word = tokenizer.index_word[predicted_word_index]
-    return predicted_word, text + ' ' + predicted_word
+    predicted_probability = predicted[0][predicted_word_index]
+    return predicted_word, predicted_probability, text + ' ' + predicted_word
 
 
-# Function to predict a sentence up to 10 words or until a period is predicted
-def predict_sentence(model, tokenizer, text, max_sequence_len):
+# Function to predict a sentence up to 10 words or until a period is predicted or probability falls below threshold
+def predict_sentence(model, tokenizer, text, max_sequence_len, probability_threshold=0.1):
     while len(text.split()) < 10:
-        next_word, text = predict_next_word(model, tokenizer, text, max_sequence_len)
-        if next_word == '.':
-            text += next_word  # Add the period without space before it
+        next_word, probability, text = predict_next_word(model, tokenizer, text, max_sequence_len)
+        if next_word == '.' or probability < probability_threshold:
+            text += next_word if next_word == '.' else ''
             break
     return text
 
@@ -42,7 +43,7 @@ while True:
     if seed_text.lower() == 'exit':
         break
     if mode == 'word':
-        next_word, _ = predict_next_word(model, tokenizer, seed_text, max_sequence_len)
+        next_word, _, _ = predict_next_word(model, tokenizer, seed_text, max_sequence_len)
         print("Next word prediction:", next_word)
     elif mode == 'sentence':
         sentence = predict_sentence(model, tokenizer, seed_text, max_sequence_len)

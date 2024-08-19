@@ -23,13 +23,16 @@ learning_rate = 0.001
 corpus_df = pd.read_csv('../datasets/nwp/corpus.csv')
 corpus = corpus_df['text'].tolist()
 
+corpus = [text for text in corpus]
+
 # Initialize model, tokenizer, and max_sequence_len variables
 model = None
 tokenizer = None
 max_sequence_len = None
 
 # Load or create tokenizer and max_sequence_len
-if reuse_saved_model and os.path.exists(model_path) and os.path.exists(tokenizer_path) and os.path.exists(max_sequence_len_path):
+if reuse_saved_model and os.path.exists(model_path) and os.path.exists(tokenizer_path) and os.path.exists(
+        max_sequence_len_path):
     # Load the model
     model = load_model(model_path)
 
@@ -44,7 +47,7 @@ if reuse_saved_model and os.path.exists(model_path) and os.path.exists(tokenizer
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 else:
     # Tokenize the text
-    tokenizer = Tokenizer()
+    tokenizer = Tokenizer(filters='')
     tokenizer.fit_on_texts(corpus)
 
 # Whether new or old tokenizer, we still need to calculate X and y for training
@@ -83,7 +86,12 @@ if model is None:
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
 # Train the model
-model.fit(X, y, epochs=100, verbose=1)
+model.fit(X, y, epochs=50, verbose=1)
+
+# Save tokenizer word index
+with open('../log/tokenizer_word_index.txt', 'w') as file:
+    for word, index in tokenizer.word_index.items():
+        file.write(f'{word} - {index}\n')
 
 # Save the model
 model.save(model_path)
