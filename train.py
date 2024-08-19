@@ -1,12 +1,12 @@
 import pickle
-
 import pyarrow.ipc as ipc
-from keras import Sequential
-from keras.src.callbacks import EarlyStopping
-from keras.src.layers import Dense, Embedding, LSTM, Dropout
-from keras.src.optimizers import Adam
-from keras.src.saving import load_model
-from keras.src.utils import pad_sequences, to_categorical
+import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dropout, Dense, Embedding, LSTM
+from tensorflow.keras.utils import to_categorical
 
 # Load the data
 with open('./datasets/train/data-00000-of-00001.arrow', 'rb') as f:
@@ -43,15 +43,15 @@ y_train = to_categorical(le.transform(y_train))
 y_val = to_categorical(le.transform(y_val))
 
 # Continue training a pretrained model or start a new one
-continue_training = True
+continue_training = False
 
 if continue_training:
     # Load the pretrained model
-    model = load_model('intent_recognition_model.keras')
+    model = tf.keras.models.load_model('intent_recognition_model.keras')
 else:
     # Define a new model
     model = Sequential()
-    model.add(Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128, input_length=max_len))
+    model.add(Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128))
     model.add(LSTM(128, return_sequences=True))
     model.add(Dropout(0.2))
     model.add(LSTM(128))
@@ -69,7 +69,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=3)
 model.fit(
     x_train, y_train,
     validation_data=(x_val, y_val),
-    epochs=20,
+    epochs=100,
     batch_size=32,
     callbacks=[early_stopping]
 )
