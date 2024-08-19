@@ -5,13 +5,13 @@ from keras.src.saving import load_model
 from keras.src.utils import pad_sequences
 
 # Load the model
-model = load_model('intent_recognition_model.keras')
+model = load_model('../intent_recognition_model.keras')
 
 # Load the tokenizer and the LabelEncoder
-with open('tokenizer.pickle', 'rb') as f:
+with open('../tokenizer.pickle', 'rb') as f:
     tokenizer = pickle.load(f)
 
-with open('label_encoder.pickle', 'rb') as f:
+with open('../label_encoder.pickle', 'rb') as f:
     le = pickle.load(f)
 
 

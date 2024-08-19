@@ -1,0 +1,74 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "en",
+  "dataset_name": "amazon_massive_intent",
+  "dataset_size": 1442519,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/mteb/amazon_massive_intent@4672e20407010da34463acc759c162ca9734bca6/train/en.json.gz": {
+      "num_bytes": 187003,
+      "checksum": null
+    },
+    "hf://datasets/mteb/amazon_massive_intent@4672e20407010da34463acc759c162ca9734bca6/test/en.json.gz": {
+      "num_bytes": 54111,
+      "checksum": null
+    },
+    "hf://datasets/mteb/amazon_massive_intent@4672e20407010da34463acc759c162ca9734bca6/validation/en.json.gz": {
+      "num_bytes": 38340,
+      "checksum": null
+    }
+  },
+  "download_size": 279454,
+  "features": {
+    "id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "label": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "label_text": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "text": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "lang": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 1721973,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 1007288,
+      "num_examples": 11514,
+      "dataset_name": "amazon_massive_intent"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 258185,
+      "num_examples": 2974,
+      "dataset_name": "amazon_massive_intent"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 177046,
+      "num_examples": 2033,
+      "dataset_name": "amazon_massive_intent"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
