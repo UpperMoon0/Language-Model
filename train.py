@@ -3,10 +3,21 @@ import pyarrow.ipc as ipc
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dropout, Dense, Embedding, LSTM
 from tensorflow.keras.utils import to_categorical
+
+# Check if GPU is available
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+
+# Set memory growth
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(e)
 
 # Load the data
 with open('./datasets/train/data-00000-of-00001.arrow', 'rb') as f:
@@ -43,7 +54,7 @@ y_train = to_categorical(le.transform(y_train))
 y_val = to_categorical(le.transform(y_val))
 
 # Continue training a pretrained model or start a new one
-continue_training = False
+continue_training = True
 
 if continue_training:
     # Load the pretrained model
@@ -62,16 +73,12 @@ else:
 optimizer = Adam(learning_rate=3e-5)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-# Define early stopping
-early_stopping = EarlyStopping(monitor='val_loss', patience=3)
-
 # Train the model
 model.fit(
     x_train, y_train,
     validation_data=(x_val, y_val),
     epochs=100,
     batch_size=32,
-    callbacks=[early_stopping]
 )
 
 # Save the model after training

@@ -18,7 +18,7 @@ with open('label_encoder.pickle', 'rb') as f:
 def predict_intent(p_sentence):
     # Tokenize and pad the input sentence
     sequence = tokenizer.texts_to_sequences([p_sentence])
-    padded_sequence = pad_sequences(sequence, maxlen=100)  # assuming 100 was the max length used during training
+    padded_sequence = pad_sequences(sequence, maxlen=295)  # assuming 100 was the max length used during training
 
     # Predict the intent
     prediction = model.predict(np.array(padded_sequence))
